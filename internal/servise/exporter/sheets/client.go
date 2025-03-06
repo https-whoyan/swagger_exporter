@@ -18,6 +18,7 @@ type sheetsClient struct {
 	sheetName  string
 	sheetIDInt int64
 	sheetID    string
+	parsedData *models.Rows
 	sheetsS    *sheets.Service
 }
 
@@ -52,8 +53,10 @@ func (c *sheetsClient) Export(excelTable *models.ExcelTable) error {
 	}
 	ctx := context.Background()
 	for _, fn := range []func(ctx context.Context, excelT *models.ExcelTable) error{
-		//c.deleteSheet,
-		//c.createSheet,
+		c.findSheetID,
+		c.parseData,
+		c.deleteSheet,
+		c.createSheet,
 		c.findSheetID,
 		c.setStyles,
 		c.setSizes,

@@ -30,7 +30,7 @@ func (c *sheetsClient) setSizes(ctx context.Context, excelT *models.ExcelTable) 
 	}
 	var requests []*sheets.Request
 
-	for _, col := range excelT.Columns {
+	for _, col := range excelT.ExcelColumns {
 		colIndex := columnLetterToIndex(col.ID)
 		requests = append(requests, &sheets.Request{
 			UpdateDimensionProperties: &sheets.UpdateDimensionPropertiesRequest{
@@ -47,7 +47,7 @@ func (c *sheetsClient) setSizes(ctx context.Context, excelT *models.ExcelTable) 
 			},
 		})
 	}
-	for _, row := range excelT.Rows {
+	for _, row := range excelT.ExcelRows {
 		requests = append(requests, &sheets.Request{
 			UpdateDimensionProperties: &sheets.UpdateDimensionPropertiesRequest{
 				Range: &sheets.DimensionRange{

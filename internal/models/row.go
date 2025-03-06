@@ -10,3 +10,23 @@ type Row struct {
 	Body         []byte `json:"body"`
 	Response     []byte `json:"response"`
 }
+
+type Rows struct {
+	mp map[string]*Row
+}
+
+func NewRows() *Rows {
+	return &Rows{mp: make(map[string]*Row)}
+}
+
+func (r Rows) Add(row *Row) {
+	r.mp[row.Path+":"+row.HttpMethod] = row
+}
+
+func (r Rows) Get(path string, method string) *Row {
+	return r.mp[path+":"+method]
+}
+
+func (r *Rows) Len() int {
+	return len(r.mp)
+}

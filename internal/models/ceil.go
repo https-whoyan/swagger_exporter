@@ -30,8 +30,36 @@ func (c Cells) Add(position CeilPosition, ceilValue interface{}, ceilStyle *Ceil
 	}
 }
 
+func (c Cells) ReplaceValue(position CeilPosition, ceilValue interface{}) {
+	prev, ok := c[position]
+	if !ok {
+		c[position] = &Ceil{
+			Position:  position,
+			CeilValue: ceilValue,
+		}
+		return
+	}
+	c[position] = &Ceil{
+		Position:  position,
+		CeilValue: ceilValue,
+		CeilStyle: prev.CeilStyle,
+	}
+}
+
 func (c Cells) Len() int {
 	return len(c)
+}
+
+func (c Cells) Values() []interface{} {
+	values := make([]interface{}, 0, len(c))
+	for _, ceil := range c {
+		values = append(values, ceil.CeilValue)
+	}
+	return values
+}
+
+func (c Cells) Get(position CeilPosition) *Ceil {
+	return c[position]
 }
 
 func NewCells() Cells {

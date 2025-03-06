@@ -6,7 +6,7 @@ import (
 )
 
 func (s *excelService) setColumnsWidth(f *excelize.File, t *models.ExcelTable) error {
-	for _, col := range t.Columns {
+	for _, col := range t.ExcelColumns {
 		err := f.SetColWidth(s.sheetName, col.ID, col.ID, col.Width)
 		if err != nil {
 			return err
@@ -16,7 +16,7 @@ func (s *excelService) setColumnsWidth(f *excelize.File, t *models.ExcelTable) e
 }
 
 func (s *excelService) setRowsHeight(f *excelize.File, t *models.ExcelTable) error {
-	for _, col := range t.Rows {
+	for _, col := range t.ExcelRows {
 		err := f.SetRowHeight(s.sheetName, col.ID+1, col.Width)
 		if err != nil {
 			return err

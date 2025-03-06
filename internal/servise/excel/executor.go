@@ -3,6 +3,7 @@ package excel
 import (
 	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"github.com/xuri/excelize/v2"
+	"log"
 )
 
 func GetExcelTable(rows []*models.Row) (*models.ExcelTable, error) {
@@ -55,9 +56,15 @@ func GetExcelTable(rows []*models.Row) (*models.ExcelTable, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &models.ExcelTable{
-		Cells:   ceils,
-		Rows:    excelRows,
-		Columns: excelColumns,
-	}, nil
+	outTable := &models.ExcelTable{
+		Cells:        ceils,
+		ExcelRows:    excelRows,
+		ExcelColumns: excelColumns,
+	}
+	log.Printf(
+		"swagger_exporter: will be places %d rows and %d unique ceils.",
+		len(outTable.ExcelRows),
+		outTable.Cells.Len(),
+	)
+	return outTable, nil
 }

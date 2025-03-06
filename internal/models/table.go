@@ -11,9 +11,9 @@ type ExcelColumn struct {
 }
 
 type ExcelTable struct {
-	Cells   *Cells
-	Rows    []*ExcelRow
-	Columns []*ExcelColumn
+	Cells        *Cells
+	ExcelRows    []*ExcelRow
+	ExcelColumns []*ExcelColumn
 }
 
 const DefaultSheetName = "Sheet"

@@ -7,9 +7,10 @@ import (
 func getCells(cfg *config) (*models.Cells, error) {
 	outCells := models.NewCells()
 	for rowID := range cfg.rowsN + 2 {
-		if rowID == 0 {
+		if rowID == 0 { // Header
 			continue
 		}
+		byRow := models.NewCells()
 		for _, columnID := range columnsArr {
 			cell := getCell(rowID, columnID)
 			// Style
@@ -33,6 +34,11 @@ func getCells(cfg *config) (*models.Cells, error) {
 				return nil, err
 			}
 			outCells.Add(
+				models.NewCeilPosition(cell),
+				ceilValueStr,
+				modelsStyle,
+			)
+			byRow.Add(
 				models.NewCeilPosition(cell),
 				ceilValueStr,
 				modelsStyle,

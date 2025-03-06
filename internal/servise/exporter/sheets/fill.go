@@ -8,24 +8,33 @@ import (
 )
 
 func (c *sheetsClient) setInfo(ctx context.Context, excelT *models.ExcelTable) error {
-	cells := *excelT.Cells
-	var values [][]interface{}
-	resp, err := c.sheetsS.Spreadsheets.Values.Get(c.sheetID, c.sheetName+"!A:Z").Context(ctx).Do()
-	if err != nil {
-		return fmt.Errorf("ошибка при получении текущих данных: %w", err)
-	}
-	if len(resp.Values) > 0 {
-		values = make([][]interface{}, len(resp.Values))
-		for i := range resp.Values {
-			values[i] = make([]interface{}, len(resp.Values[i]))
-			copy(values[i], resp.Values[i])
-		}
-	}
-	for ceilPosition, ceil := range cells {
-		row, col := parsePosition(ceilPosition.String())
-		if models.IsSkippedColumn(col) && row != 0 {
+	// For each row
+	n := len(excelT.ExcelRows)
+	for rowID := 1; rowID <= n; rowID++ {
+		pathCeil := excelT.Cells.Get(
+			models.CeilPosition(fmt.Sprintf("A%d", rowID)),
+		)
+		if pathCeil == nil {
 			continue
 		}
+		ceilPath := pathCeil.CeilValue.(string)
+		method := excelT.Cells.Get(
+			models.CeilPosition(fmt.Sprintf("B%d", rowID)),
+		).CeilValue.(string)
+		parsedData := c.parsedData.Get(ceilPath, method)
+		if parsedData == nil {
+			continue
+		}
+		// Replace
+		excelT.Cells.ReplaceValue(
+			models.CeilPosition(fmt.Sprintf("E%d", rowID)),
+			parsedData.AllowedRoles,
+		)
+	}
+	cells := *excelT.Cells
+	var values [][]interface{}
+	for ceilPosition, ceil := range cells {
+		row, col := parsePosition(ceilPosition.String())
 		for len(values) <= row {
 			values = append(values, []interface{}{})
 		}
@@ -38,7 +47,7 @@ func (c *sheetsClient) setInfo(ctx context.Context, excelT *models.ExcelTable) e
 		Range:  c.sheetName + "!A1",
 		Values: values,
 	}
-	_, err = c.sheetsS.Spreadsheets.Values.Update(
+	_, err := c.sheetsS.Spreadsheets.Values.Update(
 		c.sheetID, valueRange.Range, valueRange,
 	).ValueInputOption("RAW").Context(ctx).Do()
 	if err != nil {
