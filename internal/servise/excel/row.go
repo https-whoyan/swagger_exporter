@@ -4,7 +4,7 @@ import "github.com/https-whoyan/swagger_exporter/internal/models"
 
 const (
 	headerRowHeight = 25
-	infoRowHeight   = 30
+	infoRowHeight   = 40
 )
 
 func setRowsHeight(cfg *config) error {
@@ -32,8 +32,8 @@ func getRowsHeight(cfg *config) ([]*models.ExcelRow, error) {
 			return nil, err
 		}
 		out = append(out, &models.ExcelRow{
-			ID:    i,
-			Width: int(rowHeight),
+			ID:    i - 1,
+			Width: rowHeight,
 		})
 	}
 	return out, nil

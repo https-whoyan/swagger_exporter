@@ -29,6 +29,15 @@ func setCellsInfo(
 	rows := cfg.rows
 	for i, row := range rows {
 		rowIndex := i + 2
+
+		// HttpMethod
+		const httpMethodColumn = "B"
+		cell := getCell(rowIndex, httpMethodColumn)
+		err = parseHttpMethodAndSetStyle(cfg, cell, row.HttpMethod)
+		if err != nil {
+			return err
+		}
+
 		for _, column := range columnsArr {
 			err = f.SetCellValue(
 				sheetName,
@@ -39,8 +48,9 @@ func setCellsInfo(
 				return err
 			}
 		}
+		// Special
 		for _, jsonColumn := range jsonColumns {
-			cell := getCell(rowIndex, jsonColumn)
+			cell = getCell(rowIndex, jsonColumn)
 			err = setCeilStyle(
 				cfg,
 				cell,
@@ -51,7 +61,7 @@ func setCellsInfo(
 			}
 		}
 		for _, centerColumn := range centerStylesColumns {
-			cell := getCell(rowIndex, centerColumn)
+			cell = getCell(rowIndex, centerColumn)
 			err = setCeilStyle(
 				cfg,
 				cell,
@@ -61,13 +71,13 @@ func setCellsInfo(
 				return err
 			}
 		}
-		// HttpMethod
-		const httpMethodColumn = "B"
-
-		cell := getCell(rowIndex, httpMethodColumn)
-		err = parseHttpMethodAndSetStyle(cfg, cell, row.HttpMethod)
-		if err != nil {
-			return err
+		for _, boldStyleColumn := range boldStylesColumns {
+			cell = getCell(rowIndex, boldStyleColumn)
+			err = setCeilStyle(
+				cfg,
+				cell,
+				boldTextStyle,
+			)
 		}
 	}
 

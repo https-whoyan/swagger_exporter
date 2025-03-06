@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/https-whoyan/swagger_exporter/internal/utils/slice"
 	"github.com/xuri/excelize/v2"
 	"google.golang.org/api/sheets/v4"
@@ -79,7 +78,6 @@ func FromExelizeCeilStyle(exelizeStyle *excelize.Style) (*CeilStyle, error) {
 			Color:  fontColor,
 		}
 	}
-	fmt.Println(outBorders)
 	return &CeilStyle{
 		BackgroundFill: outFill,
 		Borders:        outBorders,
@@ -95,10 +93,12 @@ func (s *CeilStyle) SheetStyle() *sheets.CellFormat {
 		textFormat      *sheets.TextFormat
 	)
 	if s.BackgroundFill != nil {
-		*backgroundColor = s.BackgroundFill.Color.GoogleColor()
+		sheetsColor := s.BackgroundFill.Color.GoogleColor()
+		backgroundColor = &sheetsColor
 	}
 	if s.Borders != nil {
 		border := s.Borders.Border
+		border.Style = "SOLID_MEDIUM"
 		borders = &sheets.Borders{
 			Bottom: border,
 			Left:   border,
@@ -117,6 +117,9 @@ func (s *CeilStyle) SheetStyle() *sheets.CellFormat {
 	if s.Alignment != nil {
 		horizontalAlignment = s.Alignment.Horizontal
 		verticalAlignment = s.Alignment.Vertical
+		if verticalAlignment == "center" {
+			verticalAlignment = "MIDDLE"
+		}
 		wrapStrategy = s.Alignment.WrapText
 	}
 	return &sheets.CellFormat{

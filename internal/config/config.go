@@ -25,6 +25,7 @@ func (l LocalConfig) Config() interface{} {
 type GoogleSheetsConfig struct {
 	CommonConfig
 	GoogleSheetsCredsFile string `toml:"google_sheets_creds_file" json:"google_sheets_creds_file"`
+	SheetID               string `toml:"sheet_id" json:"sheet_id"`
 }
 
 func (g GoogleSheetsConfig) RunMode() RunMode {

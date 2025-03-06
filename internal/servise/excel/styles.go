@@ -2,7 +2,14 @@ package excel
 
 import "github.com/xuri/excelize/v2"
 
+const fontSize = 12
+const fontFamily = "Segoe UI"
+
 var (
+	defaultFont = &excelize.Font{
+		Size:   fontSize,
+		Family: fontFamily,
+	}
 	headerStyle = &excelize.Style{
 		Fill: excelize.Fill{
 			Type:    "pattern",
@@ -11,6 +18,7 @@ var (
 		},
 		Font: &excelize.Font{
 			Bold: true,
+			Size: fontSize,
 		},
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
@@ -24,25 +32,32 @@ var (
 			{Type: "right", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1},
 		},
+		Font: defaultFont,
 	}
 	jsonStyle = &excelize.Style{
 		Alignment: &excelize.Alignment{
 			Vertical: "top",
 		},
-		Font: &excelize.Font{
-			Size: 11,
-		},
+		Font: defaultFont,
 	}
 	centerStyle = &excelize.Style{
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
 			Vertical:   "center",
 		},
+		Font: defaultFont,
 	}
 	commonStyle = &excelize.Style{
 		Font: &excelize.Font{
 			Family: "Segoe UI",
-			Size:   13,
+			Size:   fontSize,
+		},
+	}
+	boldStyle = &excelize.Style{
+		Font: &excelize.Font{
+			Family: "Segoe UI",
+			Size:   fontSize,
+			Bold:   true,
 		},
 	}
 
@@ -54,12 +69,15 @@ var (
 )
 
 var (
-	headerStyleInt, borderStyleInt, jsonStyleInt, centerStyleInt, commonStyleInt int
+	headerStyleInt, borderStyleInt, jsonStyleInt, centerStyleInt, commonStyleInt, boldTextStyle int
 
 	jsonColumns = []string{
 		"F", "G", "H",
 	}
 	centerStylesColumns = []string{
+		"A", "B",
+	}
+	boldStylesColumns = []string{
 		"A", "B",
 	}
 )
@@ -82,6 +100,10 @@ func initStyles(cfg *config) (err error) {
 		return
 	}
 	commonStyleInt, err = cfg.f.NewStyle(commonStyle)
+	if err != nil {
+		return
+	}
+	boldTextStyle, err = cfg.f.NewStyle(boldStyle)
 	if err != nil {
 		return
 	}

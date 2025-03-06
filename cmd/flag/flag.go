@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/https-whoyan/swagger_exporter/internal/config"
 )
@@ -23,6 +24,7 @@ func ParseFlag() (config.Config, error) {
 	outputPath := flag.String("output", "swagger.xlsx", "Путь к выходному Excel файлу")
 	// Export
 	googleSheetsCredsFile := flag.String("creds", "", "Путь к cread'ам google oauth service client'а")
+	sheetsID := flag.String("sheet_id", "", "Google SheetID")
 	flag.Parse()
 
 	// Common
@@ -47,6 +49,7 @@ func ParseFlag() (config.Config, error) {
 	var microservice = ""
 	if microserviceNamePtr != nil && *microserviceNamePtr != "" {
 		microservice = *microserviceNamePtr
+		microservice = strings.NewReplacer("-", "_", ".", "_").Replace(microservice)
 	}
 	// Local
 	var outputDst = defaultOutXlsxFile
@@ -71,6 +74,7 @@ func ParseFlag() (config.Config, error) {
 				Microservice: microservice,
 			},
 			GoogleSheetsCredsFile: sheetCreedsCfg,
+			SheetID:               ptrStrToStr(sheetsID),
 		}, nil
 	}
 }

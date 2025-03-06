@@ -19,14 +19,14 @@ var (
 )
 
 var widthMap = map[string]float64{
-	"A": 45,  // Полный путь
-	"B": 17,  // метод
-	"C": 43,  // definition
-	"D": 19,  // микросервис
-	"E": 37,  // разрешенные роли
-	"F": 64,  // args
-	"G": 81,  // body
-	"H": 108, // response
+	"A": 50.6,   // Полный путь
+	"B": 26.45,  // метод
+	"C": 66.7,   // definition
+	"D": 38.5,   // микросервис
+	"E": 42.55,  // разрешенные роли
+	"F": 85.1,   // args
+	"G": 104.65, // body
+	"H": 135.7,  // response
 }
 
 var maxColumn = "H"
@@ -87,7 +87,7 @@ func getColumnsWidth(cfg *config) ([]*models.ExcelColumn, error) {
 		}
 		out = append(out, &models.ExcelColumn{
 			ID:    col,
-			Width: int(colWidth),
+			Width: colWidth,
 		})
 	}
 	return out, nil

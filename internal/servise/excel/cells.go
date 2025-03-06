@@ -1,6 +1,8 @@
 package excel
 
-import "github.com/https-whoyan/swagger_exporter/internal/models"
+import (
+	"github.com/https-whoyan/swagger_exporter/internal/models"
+)
 
 func getCells(cfg *config) (*models.Cells, error) {
 	outCells := models.NewCells()
@@ -16,6 +18,8 @@ func getCells(cfg *config) (*models.Cells, error) {
 				return nil, err
 			}
 			ceilStyle, err := cfg.f.GetStyle(ceilStyleInt)
+			ceilStyle.Font.Size = fontSize
+			ceilStyle.Font.Family = fontFamily
 			if err != nil {
 				return nil, err
 			}
