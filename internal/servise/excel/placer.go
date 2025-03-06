@@ -1,81 +1,95 @@
 package excel
 
 import (
-	"bytes"
-	"strconv"
-
-	"github.com/https-whoyan/swagger_exporter/internal/models"
-	"github.com/xuri/excelize/v2"
+	"fmt"
 )
 
-func GetBuffer(rows []*models.Row) (*bytes.Buffer, error) {
-	f := excelize.NewFile()
-	sheetName := "Swagger Export"
-	index, err := f.NewSheet(sheetName)
-	if err != nil {
-		return nil, err
-	}
-	f.SetActiveSheet(index)
-
-	for i, header := range []string{
-		"Полный путь",
-		"HTTP метод",
-		"Микросервис",
-		"Разрешенные роли",
-		"Query параметры",
-		"Body запроса",
-		"Response запроса",
-	} {
-		cell := string(rune('A'+i)) + "1"
-		err = f.SetCellValue(sheetName, cell, header)
+func setHeader(
+	cfg *config,
+) (err error) {
+	for column, header := range headersMap {
+		cell := getCell(1, column)
+		err = cfg.f.SetCellValue(cfg.sheetName, cell, header)
 		if err != nil {
-			return nil, err
+			return err
+		}
+		err = cfg.f.SetCellStyle(cfg.sheetName, cell, cell, headerStyleInt)
+		if err != nil {
+			return err
 		}
 	}
-
-	for i, row := range rows {
-		rowIndex := i + 2
-		err = f.SetCellValue(sheetName, getCeil(rowIndex, "A"), row.Path)
-		if err != nil {
-			return nil, err
-		}
-		err = f.SetCellValue(sheetName, getCeil(rowIndex, "B"), row.HttpMethod)
-		if err != nil {
-			return nil, err
-		}
-		err = f.SetCellValue(sheetName, getCeil(rowIndex, "C"), row.Microservice)
-		if err != nil {
-			return nil, err
-		}
-		err = f.SetCellValue(sheetName, getCeil(rowIndex, "D"), row.AllowedRoles)
-		if err != nil {
-			return nil, err
-		}
-		err = f.SetCellValue(sheetName, getCeil(rowIndex, "E"), row.QueryParams)
-		if err != nil {
-			return nil, err
-		}
-		if len(row.Body) != 0 {
-			err = f.SetCellValue(sheetName, getCeil(rowIndex, "F"), row.Body)
-			if err != nil {
-				return nil, err
-			}
-		}
-		if len(row.Response) != 0 {
-			err = f.SetCellValue(sheetName, getCeil(rowIndex, "G"), row.Response)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	var buf bytes.Buffer
-	if err = f.Write(&buf); err != nil {
-		return nil, err
-	}
-	return &buf, nil
+	return nil
 }
 
-func getCeil(rowIndex int, column string) string {
-	return column + strconv.Itoa(rowIndex)
+func setCellsInfo(
+	cfg *config,
+) (err error) {
+	sheetName := cfg.sheetName
+	f := cfg.f
+	rows := cfg.rows
+	for i, row := range rows {
+		rowIndex := i + 2
+		for _, column := range columnsArr {
+			err = f.SetCellValue(
+				sheetName,
+				getCell(rowIndex, column),
+				rowValueByColumnFns[column](row),
+			)
+			if err != nil {
+				return err
+			}
+		}
+		for _, jsonColumn := range jsonColumns {
+			cell := getCell(rowIndex, jsonColumn)
+			err = setCeilStyle(
+				cfg,
+				cell,
+				jsonStyleInt,
+			)
+			if err != nil {
+				return err
+			}
+		}
+		for _, centerColumn := range centerStylesColumns {
+			cell := getCell(rowIndex, centerColumn)
+			err = setCeilStyle(
+				cfg,
+				cell,
+				centerStyleInt,
+			)
+			if err != nil {
+				return err
+			}
+		}
+		// HttpMethod
+		const httpMethodColumn = "B"
+
+		cell := getCell(rowIndex, httpMethodColumn)
+		err = parseHttpMethodAndSetStyle(cfg, cell, row.HttpMethod)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setTable(
+	cfg *config,
+) error {
+	tableStyle.Name = cfg.sheetName
+	tableStyle.Range = fmt.Sprintf("A1:H%d", cfg.rowsN+1)
+	err := cfg.f.AddTable(cfg.sheetName, tableStyle)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func formatSheets(cfg *config) error {
+	if cfg.f.SheetCount != 1 {
+		return cfg.f.DeleteSheet("Sheet1")
+	}
+	return nil
 }

@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-func GetJsons(cfg *config.Config) ([]*models.JsonInfo, error) {
-	osFile, err := os.Open(cfg.JsonFileName)
+func GetJsons(cfg config.Config) ([]*models.JsonInfo, error) {
+	osFile, err := os.Open(cfg.Common().JsonFileName)
 	if err != nil {
 		return nil, err
 	}

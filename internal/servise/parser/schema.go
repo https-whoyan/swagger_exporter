@@ -2,7 +2,7 @@ package parser
 
 import (
 	"strings"
-	
+
 	"github.com/https-whoyan/swagger_exporter/internal/models"
 )
 
@@ -15,11 +15,12 @@ const (
 	propertiesKey  = "properties"
 )
 
-func resolveSchema(schema map[string]interface{}, definitions map[string]interface{}) *models.SchemaInfo {
+func resolveSchema(schema mapStringInterfaceSlise, definitions mapStringInterfaceSlise) *models.SchemaInfo {
 	if ref, ok := schema[refKey].(string); ok {
 		refName := strings.TrimPrefix(ref, "#/definitions/")
-		if def, ok := definitions[refName].(map[string]interface{}); ok {
-			return resolveSchema(def, definitions)
+		definition, definitionOk := definitions[refName].(mapStringInterfaceSlise)
+		if definitionOk {
+			return resolveSchema(definition, definitions)
 		}
 	}
 
@@ -27,22 +28,22 @@ func resolveSchema(schema map[string]interface{}, definitions map[string]interfa
 		Type:       safeGetStr(schema[typeKey]),
 		Properties: make(map[string]models.SchemaDetail),
 	}
-
 	if result.Type == arrayTypeKey {
-		if items, ok := schema[itemsKey].(map[string]interface{}); ok {
+		if items, ok := schema[itemsKey].(mapStringInterfaceSlise); ok {
 			result.Properties[itemsKey] = models.SchemaDetail{
 				Type:  safeGetStr(items[typeKey]),
 				Items: resolveSchema(items, definitions),
 			}
 		}
 	}
-
-	if properties, ok := schema[propertiesKey].(map[string]interface{}); ok {
+	if properties, ok := schema[propertiesKey].(mapStringInterfaceSlise); ok {
 		for key, value := range properties {
-			if propMap, ok := value.(map[string]interface{}); ok {
-				result.Properties[key] = models.SchemaDetail{
-					Type: safeGetStr(propMap[typeKey]),
-				}
+			propMap, propOk := value.(mapStringInterfaceSlise)
+			if !propOk {
+				continue
+			}
+			result.Properties[key] = models.SchemaDetail{
+				Type: safeGetStr(propMap[typeKey]),
 			}
 		}
 	}

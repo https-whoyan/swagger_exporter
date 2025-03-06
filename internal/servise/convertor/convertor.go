@@ -7,19 +7,19 @@ import (
 	"sort"
 )
 
-func Convert(cfg *config.Config, jsons []*models.JsonInfo) ([]*models.Row, error) {
+func Convert(cfg config.Config, jsons []*models.JsonInfo) ([]*models.Row, error) {
 	var out = make([]*models.Row, len(jsons))
-	microservice := cfg.Microservice
+	microservice := cfg.Common().Microservice
 	for i, iJson := range jsons {
-		queryArgsJson, err := json.Marshal(iJson.QueryParams)
+		queryArgsJson, err := marshal(iJson.QueryParams)
 		if err != nil {
 			return nil, err
 		}
-		bodyJson, err := json.Marshal(iJson.RequestBody)
+		bodyJson, err := marshal(iJson.RequestBody)
 		if err != nil {
 			return nil, err
 		}
-		responseBodyJson, err := json.Marshal(iJson.ResponseBody)
+		responseBodyJson, err := marshal(iJson.ResponseBody)
 		if err != nil {
 			return nil, err
 		}
@@ -35,6 +35,7 @@ func Convert(cfg *config.Config, jsons []*models.JsonInfo) ([]*models.Row, error
 		out[i] = &models.Row{
 			Path:         iJson.FullPath,
 			HttpMethod:   iJson.Method,
+			Definition:   iJson.Definition,
 			Microservice: microservice,
 			AllowedRoles: "",
 			QueryParams:  queryArgsJson,
@@ -46,4 +47,8 @@ func Convert(cfg *config.Config, jsons []*models.JsonInfo) ([]*models.Row, error
 		return out[i].Path < out[j].Path
 	})
 	return out, nil
+}
+
+func marshal(v interface{}) ([]byte, error) {
+	return json.MarshalIndent(v, "", "\t")
 }

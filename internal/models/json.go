@@ -1,7 +1,10 @@
 package models
 
+//go:generate easyjson -all
+
 type JsonInfo struct {
 	FullPath     string               `json:"full_path"`
+	Definition   string               `json:"definition"`
 	Method       string               `json:"method"`
 	QueryParams  map[string]ParamInfo `json:"query_params"`
 	RequestBody  *SchemaInfo          `json:"request_body"`

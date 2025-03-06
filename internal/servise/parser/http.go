@@ -9,27 +9,34 @@ const (
 	schemaKey     = "schema"
 )
 
-func extractQueryParams(detailMap map[string]interface{}) map[string]models.ParamInfo {
+type (
+	interfaceSlise          = []interface{}
+	mapStringInterfaceSlise = map[string]interface{}
+)
+
+func extractQueryParams(detailMap mapStringInterfaceSlise) map[string]models.ParamInfo {
 	params := make(map[string]models.ParamInfo)
 
-	if parameters, ok := detailMap[parametersKey].([]interface{}); ok {
-		for _, param := range parameters {
-			paramMap, ok := param.(map[string]interface{})
-			if !ok {
-				continue
-			}
+	parameters, ok := detailMap[parametersKey].(interfaceSlise)
+	if !ok {
+		return params
+	}
+	for _, param := range parameters {
+		paramMap, paramsOk := param.(mapStringInterfaceSlise)
+		if !paramsOk {
+			continue
+		}
 
-			if paramMap["in"] == queryKey {
-				name := paramMap["name"].(string)
-				required, requiredOk := paramMap[requiredKey].(bool)
-				if !requiredOk {
-					required = false
-				}
-				params[name] = models.ParamInfo{
-					Type:        safeGetStr(paramMap[typeKey]),
-					Description: safeGetStr(paramMap[descriptionKey]),
-					Required:    required,
-				}
+		if paramMap["in"] == queryKey {
+			name := paramMap["name"].(string)
+			required, requiredOk := paramMap[requiredKey].(bool)
+			if !requiredOk {
+				required = false
+			}
+			params[name] = models.ParamInfo{
+				Type:        safeGetStr(paramMap[typeKey]),
+				Description: safeGetStr(paramMap[descriptionKey]),
+				Required:    required,
 			}
 		}
 	}
@@ -37,31 +44,48 @@ func extractQueryParams(detailMap map[string]interface{}) map[string]models.Para
 	return params
 }
 
-func extractRequestBody(detailMap map[string]interface{}, definitions map[string]interface{}) *models.SchemaInfo {
-	if parameters, ok := detailMap[parametersKey].([]interface{}); ok {
-		for _, param := range parameters {
-			paramMap, ok := param.(map[string]interface{})
-			if !ok {
+func extractRequestBody(
+	detailMap, definitions mapStringInterfaceSlise,
+) *models.SchemaInfo {
+	parameters, parametersOk := detailMap[parametersKey].(interfaceSlise)
+	if !parametersOk {
+		return nil
+	}
+	for _, param := range parameters {
+		paramMap, ok := param.(mapStringInterfaceSlise)
+		if !ok {
+			continue
+		}
+		if paramMap["in"] == "body" {
+			schema, schemaOk := paramMap[schemaKey].(mapStringInterfaceSlise)
+			if !schemaOk {
 				continue
 			}
-
-			if paramMap["in"] == "body" {
-				if schema, ok := paramMap[schemaKey].(map[string]interface{}); ok {
-					return resolveSchema(schema, definitions)
-				}
-			}
+			return resolveSchema(schema, definitions)
 		}
 	}
 	return nil
 }
 
-func extractResponseBody(detailMap map[string]interface{}, definitions map[string]interface{}) *models.SchemaInfo {
-	if responses, ok := detailMap["responses"].(map[string]interface{}); ok {
-		if resp, ok := responses["200"].(map[string]interface{}); ok {
-			if schema, ok := resp[schemaKey].(map[string]interface{}); ok {
-				return resolveSchema(schema, definitions)
-			}
-		}
+func extractResponseBody(
+	detailMap mapStringInterfaceSlise, definitions mapStringInterfaceSlise,
+) *models.SchemaInfo {
+	responses, ok := detailMap["responses"].(mapStringInterfaceSlise)
+	if !ok {
+		return nil
 	}
-	return nil
+	var (
+		resp   mapStringInterfaceSlise
+		schema mapStringInterfaceSlise
+	)
+	resp, ok = responses["200"].(mapStringInterfaceSlise)
+	if !ok {
+		return nil
+	}
+	schema, ok = resp[schemaKey].(mapStringInterfaceSlise)
+	if !ok {
+		return nil
+
+	}
+	return resolveSchema(schema, definitions)
 }
