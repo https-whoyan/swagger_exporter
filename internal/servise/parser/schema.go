@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"strings"
 )
@@ -20,7 +19,6 @@ const (
 )
 
 func resolveSchema(schema mapStringInterfaceSlice, definitions mapStringInterfaceSlice) *models.SchemaInfo {
-	fmt.Println(schema)
 	if ref, ok := schema[refKey].(string); ok {
 		refName := strings.TrimPrefix(ref, definitionsKey)
 		definition, found := definitions[refName].(mapStringInterfaceSlice)
