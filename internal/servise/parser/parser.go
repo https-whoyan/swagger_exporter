@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -12,7 +13,7 @@ import (
 func parseSwagger(file *os.File) (out []*models.JsonInfo, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("%v", r)
+			err = fmt.Errorf("panic при парсинге: %v", r)
 		}
 	}()
 	data, err := io.ReadAll(file)
@@ -42,28 +43,24 @@ func parseSwagger(file *os.File) (out []*models.JsonInfo, err error) {
 			if !detailsOk {
 				continue
 			}
-			definition := safeGetStr(detailMap[descriptionKey])
-			queryParams := extractQueryParams(detailMap)
-			requestBody := extractRequestBody(detailMap, definitions)
-			responseBody := extractResponseBody(detailMap, definitions)
 			endpoints = append(endpoints, &models.JsonInfo{
 				FullPath:     path,
 				Method:       strings.ToUpper(method),
-				Definition:   definition,
-				QueryParams:  queryParams,
-				RequestBody:  requestBody,
-				ResponseBody: responseBody,
+				Definition:   safeGetStr(detailMap[descriptionKey]),
+				QueryParams:  extractQueryParams(detailMap, definitions),
+				RequestBody:  extractRequestBody(detailMap, definitions),
+				ResponseBody: extractResponseBody(detailMap, definitions),
 			})
 		}
 	}
 
+	log.Printf("swagger_exporter: parsing successful, find endpoints N: %d\n", len(endpoints))
 	return endpoints, nil
 }
 
 func safeGetStr(val interface{}) string {
-	if val == nil {
-		return ""
+	if str, ok := val.(string); ok {
+		return str
 	}
-	str, _ := val.(string)
-	return str
+	return ""
 }

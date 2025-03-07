@@ -18,11 +18,8 @@ type ParamInfo struct {
 }
 
 type SchemaInfo struct {
-	Type       string                  `json:"type"`
-	Properties map[string]SchemaDetail `json:"properties"`
-}
-
-type SchemaDetail struct {
-	Type  string      `json:"type"`
-	Items *SchemaInfo `json:"items,omitempty"`
+	Type       string                 `json:"type,omitempty"`       // object, array, string и т. д.
+	Properties map[string]*SchemaInfo `json:"properties,omitempty"` // Если это объект
+	Items      *SchemaInfo            `json:"items,omitempty"`      // Если это массив
+	Ref        string                 `json:"$ref,omitempty"`       // Если это ссылка на другую структуру
 }

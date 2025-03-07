@@ -43,17 +43,41 @@ func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels(in 
 				in.Skip()
 			} else {
 				in.Delim('{')
-				out.Properties = make(map[string]SchemaDetail)
+				if !in.IsDelim('}') {
+					out.Properties = make(map[string]*SchemaInfo)
+				} else {
+					out.Properties = nil
+				}
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
-					var v1 SchemaDetail
-					(v1).UnmarshalEasyJSON(in)
+					var v1 *SchemaInfo
+					if in.IsNull() {
+						in.Skip()
+						v1 = nil
+					} else {
+						if v1 == nil {
+							v1 = new(SchemaInfo)
+						}
+						(*v1).UnmarshalEasyJSON(in)
+					}
 					(out.Properties)[key] = v1
 					in.WantComma()
 				}
 				in.Delim('}')
 			}
+		case "items":
+			if in.IsNull() {
+				in.Skip()
+				out.Items = nil
+			} else {
+				if out.Items == nil {
+					out.Items = new(SchemaInfo)
+				}
+				(*out.Items).UnmarshalEasyJSON(in)
+			}
+		case "$ref":
+			out.Ref = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -68,17 +92,21 @@ func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels(out
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if in.Type != "" {
 		const prefix string = ",\"type\":"
+		first = false
 		out.RawString(prefix[1:])
 		out.String(string(in.Type))
 	}
-	{
+	if len(in.Properties) != 0 {
 		const prefix string = ",\"properties\":"
-		out.RawString(prefix)
-		if in.Properties == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
-			out.RawString(`null`)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
 		} else {
+			out.RawString(prefix)
+		}
+		{
 			out.RawByte('{')
 			v2First := true
 			for v2Name, v2Value := range in.Properties {
@@ -89,10 +117,34 @@ func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels(out
 				}
 				out.String(string(v2Name))
 				out.RawByte(':')
-				(v2Value).MarshalEasyJSON(out)
+				if v2Value == nil {
+					out.RawString("null")
+				} else {
+					(*v2Value).MarshalEasyJSON(out)
+				}
 			}
 			out.RawByte('}')
 		}
+	}
+	if in.Items != nil {
+		const prefix string = ",\"items\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		(*in.Items).MarshalEasyJSON(out)
+	}
+	if in.Ref != "" {
+		const prefix string = ",\"$ref\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Ref))
 	}
 	out.RawByte('}')
 }
@@ -120,88 +172,7 @@ func (v *SchemaInfo) UnmarshalJSON(data []byte) error {
 func (v *SchemaInfo) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels(l, v)
 }
-func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(in *jlexer.Lexer, out *SchemaDetail) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeFieldName(false)
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "type":
-			out.Type = string(in.String())
-		case "items":
-			if in.IsNull() {
-				in.Skip()
-				out.Items = nil
-			} else {
-				if out.Items == nil {
-					out.Items = new(SchemaInfo)
-				}
-				(*out.Items).UnmarshalEasyJSON(in)
-			}
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(out *jwriter.Writer, in SchemaDetail) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"type\":"
-		out.RawString(prefix[1:])
-		out.String(string(in.Type))
-	}
-	if in.Items != nil {
-		const prefix string = ",\"items\":"
-		out.RawString(prefix)
-		(*in.Items).MarshalEasyJSON(out)
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v SchemaDetail) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v SchemaDetail) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *SchemaDetail) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *SchemaDetail) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(l, v)
-}
-func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(in *jlexer.Lexer, out *ParamInfo) {
+func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(in *jlexer.Lexer, out *ParamInfo) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -236,7 +207,7 @@ func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(in
 		in.Consumed()
 	}
 }
-func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(out *jwriter.Writer, in ParamInfo) {
+func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(out *jwriter.Writer, in ParamInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -261,27 +232,27 @@ func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(ou
 // MarshalJSON supports json.Marshaler interface
 func (v ParamInfo) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(&w, v)
+	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v ParamInfo) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(w, v)
+	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *ParamInfo) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(&r, v)
+	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ParamInfo) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(l, v)
+	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels1(l, v)
 }
-func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(in *jlexer.Lexer, out *JsonInfo) {
+func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(in *jlexer.Lexer, out *JsonInfo) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -302,6 +273,8 @@ func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(in
 		switch key {
 		case "full_path":
 			out.FullPath = string(in.String())
+		case "definition":
+			out.Definition = string(in.String())
 		case "method":
 			out.Method = string(in.String())
 		case "query_params":
@@ -350,7 +323,7 @@ func easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(in
 		in.Consumed()
 	}
 }
-func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(out *jwriter.Writer, in JsonInfo) {
+func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(out *jwriter.Writer, in JsonInfo) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -358,6 +331,11 @@ func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(ou
 		const prefix string = ",\"full_path\":"
 		out.RawString(prefix[1:])
 		out.String(string(in.FullPath))
+	}
+	{
+		const prefix string = ",\"definition\":"
+		out.RawString(prefix)
+		out.String(string(in.Definition))
 	}
 	{
 		const prefix string = ",\"method\":"
@@ -409,23 +387,23 @@ func easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(ou
 // MarshalJSON supports json.Marshaler interface
 func (v JsonInfo) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(&w, v)
+	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v JsonInfo) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(w, v)
+	easyjson42239ddeEncodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *JsonInfo) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(&r, v)
+	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *JsonInfo) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels3(l, v)
+	easyjson42239ddeDecodeGithubComHttpsWhoyanSwaggerExporterInternalModels2(l, v)
 }

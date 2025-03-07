@@ -1,6 +1,9 @@
 package parser
 
-import "github.com/https-whoyan/swagger_exporter/internal/models"
+import (
+	"github.com/https-whoyan/swagger_exporter/internal/models"
+	"strings"
+)
 
 const (
 	parametersKey = "parameters"
@@ -10,82 +13,96 @@ const (
 )
 
 type (
-	interfaceSlise          = []interface{}
-	mapStringInterfaceSlise = map[string]interface{}
+	interfaceSlice          = []interface{}
+	mapStringInterfaceSlice = map[string]interface{}
 )
 
-func extractQueryParams(detailMap mapStringInterfaceSlise) map[string]models.ParamInfo {
+func extractQueryParams(detailMap mapStringInterfaceSlice, definitions mapStringInterfaceSlice) map[string]models.ParamInfo {
 	params := make(map[string]models.ParamInfo)
-
-	parameters, ok := detailMap[parametersKey].(interfaceSlise)
+	parameters, ok := detailMap[parametersKey].([]interface{})
 	if !ok {
 		return params
 	}
 	for _, param := range parameters {
-		paramMap, paramsOk := param.(mapStringInterfaceSlise)
-		if !paramsOk {
+		paramMap, isObject := param.(mapStringInterfaceSlice)
+		if !isObject {
 			continue
 		}
-
-		if paramMap["in"] == queryKey {
-			name := paramMap["name"].(string)
-			required, requiredOk := paramMap[requiredKey].(bool)
-			if !requiredOk {
-				required = false
-			}
-			params[name] = models.ParamInfo{
-				Type:        safeGetStr(paramMap[typeKey]),
-				Description: safeGetStr(paramMap[descriptionKey]),
-				Required:    required,
+		if ref, found := paramMap[refKey].(string); found {
+			refName := strings.TrimPrefix(ref, "#/definitions/")
+			if definition, exists := definitions[refName].(mapStringInterfaceSlice); exists {
+				paramMap = definition
+			} else {
+				continue
 			}
 		}
+		if safeGetStr(paramMap["in"]) != queryKey {
+			continue
+		}
+		name := safeGetStr(paramMap["name"])
+		required, _ := paramMap[requiredKey].(bool)
+		params[name] = models.ParamInfo{
+			Type:        safeGetStr(paramMap["type"]),
+			Description: safeGetStr(paramMap["description"]),
+			Required:    required,
+		}
 	}
-
 	return params
 }
 
-func extractRequestBody(
-	detailMap, definitions mapStringInterfaceSlise,
-) *models.SchemaInfo {
-	parameters, parametersOk := detailMap[parametersKey].(interfaceSlise)
-	if !parametersOk {
+func extractRequestBody(detailMap, definitions mapStringInterfaceSlice) *models.SchemaInfo {
+	parameters, ok := detailMap[parametersKey].([]interface{})
+	if !ok {
 		return nil
 	}
+	var lastBodyParam mapStringInterfaceSlice
 	for _, param := range parameters {
-		paramMap, ok := param.(mapStringInterfaceSlise)
-		if !ok {
+		paramMap, isObject := param.(mapStringInterfaceSlice)
+		if !isObject {
 			continue
 		}
-		if paramMap["in"] == "body" {
-			schema, schemaOk := paramMap[schemaKey].(mapStringInterfaceSlise)
-			if !schemaOk {
-				continue
-			}
-			return resolveSchema(schema, definitions)
+		if safeGetStr(paramMap["in"]) == "body" {
+			lastBodyParam = paramMap
 		}
 	}
-	return nil
+	if lastBodyParam == nil {
+		return nil
+	}
+	if ref, exists := lastBodyParam[refKey].(string); exists {
+		refName := strings.TrimPrefix(ref, "#/definitions/")
+		if definition, found := definitions[refName].(mapStringInterfaceSlice); found {
+			return resolveSchema(definition, definitions)
+		}
+		return nil
+	}
+	schema, schemaOk := lastBodyParam[schemaKey].(mapStringInterfaceSlice)
+	if !schemaOk {
+		return nil
+	}
+	return resolveSchema(schema, definitions)
 }
 
-func extractResponseBody(
-	detailMap mapStringInterfaceSlise, definitions mapStringInterfaceSlise,
-) *models.SchemaInfo {
-	responses, ok := detailMap["responses"].(mapStringInterfaceSlise)
+func extractResponseBody(detailMap, definitions mapStringInterfaceSlice) *models.SchemaInfo {
+	responses, ok := detailMap["responses"].(mapStringInterfaceSlice)
 	if !ok {
 		return nil
 	}
-	var (
-		resp   mapStringInterfaceSlise
-		schema mapStringInterfaceSlise
-	)
-	resp, ok = responses["200"].(mapStringInterfaceSlise)
-	if !ok {
-		return nil
-	}
-	schema, ok = resp[schemaKey].(mapStringInterfaceSlise)
-	if !ok {
-		return nil
 
+	resp, ok := responses["200"].(mapStringInterfaceSlice)
+	if !ok {
+		return nil
 	}
+	if ref, exists := resp[refKey].(string); exists {
+		refName := strings.TrimPrefix(ref, "#/definitions/")
+		if definition, found := definitions[refName].(mapStringInterfaceSlice); found {
+			return resolveSchema(definition, definitions)
+		}
+		return nil
+	}
+	schema, ok := resp[schemaKey].(mapStringInterfaceSlice)
+	if !ok {
+		return nil
+	}
+
 	return resolveSchema(schema, definitions)
 }
