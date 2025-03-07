@@ -21,25 +21,25 @@ func parseSwagger(file *os.File) (out []*models.JsonInfo, err error) {
 		return nil, fmt.Errorf("ошибка чтения файла: %w", err)
 	}
 
-	var swagger mapStringInterfaceSlise
+	var swagger mapStringInterfaceSlice
 	if err = json.Unmarshal(data, &swagger); err != nil {
 		return nil, fmt.Errorf("ошибка парсинга JSON: %w", err)
 	}
 
-	paths, ok := swagger["paths"].(mapStringInterfaceSlise)
+	paths, ok := swagger["paths"].(mapStringInterfaceSlice)
 	if !ok {
 		return nil, fmt.Errorf("отсутствует поле 'paths' в JSON")
 	}
-	definitions, _ := swagger["definitions"].(mapStringInterfaceSlise)
+	definitions, _ := swagger["definitions"].(mapStringInterfaceSlice)
 
 	var endpoints []*models.JsonInfo
 	for path, methods := range paths {
-		methodMap, methodsOk := methods.(mapStringInterfaceSlise)
+		methodMap, methodsOk := methods.(mapStringInterfaceSlice)
 		if !methodsOk {
 			continue
 		}
 		for method, details := range methodMap {
-			detailMap, detailsOk := details.(mapStringInterfaceSlise)
+			detailMap, detailsOk := details.(mapStringInterfaceSlice)
 			if !detailsOk {
 				continue
 			}

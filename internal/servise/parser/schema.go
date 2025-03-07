@@ -1,27 +1,29 @@
 package parser
 
 import (
+	"fmt"
 	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"strings"
 )
 
 const (
-	refKey         = "$ref"
-	typeKey        = "type"
-	arrayTypeKey   = "array"
-	objectTypeKey  = "object"
-	itemsKey       = "items"
-	propertiesKey  = "properties"
-	descriptionKey = "description"
-	definitionsKey = "#/definitions/"
+	refKey               = "$ref"
+	typeKey              = "type"
+	arrayTypeKey         = "array"
+	mapTypeKey           = "map"
+	objectTypeKey        = "object"
+	itemsKey             = "items"
+	propertiesKey        = "properties"
+	additionalProperties = "additionalProperties"
+	descriptionKey       = "description"
+	definitionsKey       = "#/definitions/"
 )
 
-type mapStringInterfaceSlise = map[string]interface{}
-
-func resolveSchema(schema mapStringInterfaceSlise, definitions mapStringInterfaceSlise) *models.SchemaInfo {
+func resolveSchema(schema mapStringInterfaceSlice, definitions mapStringInterfaceSlice) *models.SchemaInfo {
+	fmt.Println(schema)
 	if ref, ok := schema[refKey].(string); ok {
 		refName := strings.TrimPrefix(ref, definitionsKey)
-		definition, found := definitions[refName].(mapStringInterfaceSlise)
+		definition, found := definitions[refName].(mapStringInterfaceSlice)
 		if found {
 			return resolveSchema(definition, definitions)
 		}
@@ -32,23 +34,28 @@ func resolveSchema(schema mapStringInterfaceSlise, definitions mapStringInterfac
 	case arrayTypeKey:
 		schemaInfo := &models.SchemaInfo{Type: arrayTypeKey}
 		if items, found := schema[itemsKey]; found {
-			switch typpedItems := items.(type) {
-			case mapStringInterfaceSlise:
-				schemaInfo.Items = resolveSchema(typpedItems, definitions)
+			switch typedItems := items.(type) {
+			case mapStringInterfaceSlice:
+				schemaInfo.Items = resolveSchema(typedItems, definitions)
 			case string:
-				refName := strings.TrimPrefix(typpedItems, definitionsKey)
-				schemaInfo.Items = resolveSchema(definitions[refName].(mapStringInterfaceSlise), definitions)
+				refName := strings.TrimPrefix(typedItems, definitionsKey)
+				schemaInfo.Items = resolveSchema(definitions[refName].(mapStringInterfaceSlice), definitions)
 			}
 		}
 		return schemaInfo
 	case objectTypeKey:
 		schemaInfo := &models.SchemaInfo{Type: objectTypeKey, Properties: make(map[string]*models.SchemaInfo)}
-		properties, found := schema[propertiesKey].(mapStringInterfaceSlise)
+		if addProps, found := schema[additionalProperties].(mapStringInterfaceSlice); found {
+			schemaInfo.Type = mapTypeKey
+			schemaInfo.Items = resolveSchema(addProps, definitions)
+			return schemaInfo
+		}
+		properties, found := schema[propertiesKey].(mapStringInterfaceSlice)
 		if !found {
 			return schemaInfo
 		}
 		for key, value := range properties {
-			propSchema, ok := value.(mapStringInterfaceSlise)
+			propSchema, ok := value.(mapStringInterfaceSlice)
 			if !ok {
 				continue
 			}
