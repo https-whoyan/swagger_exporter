@@ -1,4 +1,4 @@
-package parser
+package v2
 
 import (
 	"github.com/https-whoyan/swagger_exporter/internal/models"

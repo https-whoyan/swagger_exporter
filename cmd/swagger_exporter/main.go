@@ -1,18 +1,17 @@
 package main
 
 import (
+	parserS "github.com/https-whoyan/swagger_exporter/internal/servise/parser/executor"
 	"log"
 
 	"github.com/https-whoyan/swagger_exporter/internal/config"
 
+	cmdFlag "github.com/https-whoyan/swagger_exporter/cmd/flag"
 	convertorS "github.com/https-whoyan/swagger_exporter/internal/servise/convertor"
 	excelTableS "github.com/https-whoyan/swagger_exporter/internal/servise/excel"
 	exporterS "github.com/https-whoyan/swagger_exporter/internal/servise/exporter"
 	excelExpC "github.com/https-whoyan/swagger_exporter/internal/servise/exporter/excel"
 	sheetsExpC "github.com/https-whoyan/swagger_exporter/internal/servise/exporter/sheets"
-	parserS "github.com/https-whoyan/swagger_exporter/internal/servise/parser"
-
-	cmdFlag "github.com/https-whoyan/swagger_exporter/cmd/flag"
 )
 
 func main() {

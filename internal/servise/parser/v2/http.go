@@ -1,4 +1,4 @@
-package parser
+package v2
 
 import (
 	"github.com/https-whoyan/swagger_exporter/internal/models"
@@ -13,7 +13,6 @@ const (
 )
 
 type (
-	interfaceSlice          = []interface{}
 	mapStringInterfaceSlice = map[string]interface{}
 )
 
