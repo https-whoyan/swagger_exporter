@@ -47,7 +47,6 @@ func resolveSchemaWithSeen(schema mapStringInterfaceSlice, components mapStringI
 
 		return resolveSchemaWithSeen(definition, components, seen)
 	}
-
 	// Тип схемы
 	schemaType, _ := schema[typeKeyV3].(string)
 
