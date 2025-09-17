@@ -1,8 +1,6 @@
 module github.com/https-whoyan/swagger_exporter
 
-go 1.22
-
-toolchain go1.22.6
+go 1.25.1
 
 require (
 	dario.cat/mergo v1.0.1

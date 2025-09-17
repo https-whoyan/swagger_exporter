@@ -1,8 +1,9 @@
 package v2
 
 import (
-	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"strings"
+
+	"github.com/https-whoyan/swagger_exporter/internal/models"
 )
 
 const (
@@ -19,14 +20,25 @@ const (
 )
 
 func resolveSchema(schema mapStringInterfaceSlice, definitions mapStringInterfaceSlice) *models.SchemaInfo {
+	return resolveSchemaWithSeen(schema, definitions, make(map[string]bool))
+}
+
+func resolveSchemaWithSeen(schema mapStringInterfaceSlice, definitions mapStringInterfaceSlice, seen map[string]bool) *models.SchemaInfo {
 	if ref, ok := schema[refKey].(string); ok {
 		refName := strings.TrimPrefix(ref, definitionsKey)
-		definition, found := definitions[refName].(mapStringInterfaceSlice)
-		if found {
-			return resolveSchema(definition, definitions)
+		if seen[refName] {
+			return &models.SchemaInfo{Ref: refName}
 		}
-		return &models.SchemaInfo{Ref: refName}
+		definition, found := definitions[refName].(mapStringInterfaceSlice)
+		if !found {
+			return &models.SchemaInfo{Ref: refName}
+		}
+		seen[refName] = true
+		defer delete(seen, refName)
+
+		return resolveSchemaWithSeen(definition, definitions, seen)
 	}
+
 	schemaType, _ := schema[typeKey].(string)
 	switch schemaType {
 	case arrayTypeKey:
@@ -34,33 +46,52 @@ func resolveSchema(schema mapStringInterfaceSlice, definitions mapStringInterfac
 		if items, found := schema[itemsKey]; found {
 			switch typedItems := items.(type) {
 			case mapStringInterfaceSlice:
-				schemaInfo.Items = resolveSchema(typedItems, definitions)
+				schemaInfo.Items = resolveSchemaWithSeen(typedItems, definitions, seen)
 			case string:
+				// Случай, когда items — строка с $ref-ом
 				refName := strings.TrimPrefix(typedItems, definitionsKey)
-				schemaInfo.Items = resolveSchema(definitions[refName].(mapStringInterfaceSlice), definitions)
+				if defn, ok := definitions[refName].(mapStringInterfaceSlice); ok {
+					if seen[refName] {
+						schemaInfo.Items = &models.SchemaInfo{Ref: refName}
+					} else {
+						seen[refName] = true
+						defer delete(seen, refName)
+						schemaInfo.Items = resolveSchemaWithSeen(defn, definitions, seen)
+					}
+				} else {
+					schemaInfo.Items = &models.SchemaInfo{Ref: refName}
+				}
 			}
 		}
 		return schemaInfo
+
 	case objectTypeKey:
 		schemaInfo := &models.SchemaInfo{Type: objectTypeKey, Properties: make(map[string]*models.SchemaInfo)}
+
+		// Случай map: additionalProperties
 		if addProps, found := schema[additionalProperties].(mapStringInterfaceSlice); found {
 			schemaInfo.Type = mapTypeKey
-			schemaInfo.Items = resolveSchema(addProps, definitions)
+			schemaInfo.Items = resolveSchemaWithSeen(addProps, definitions, seen)
 			return schemaInfo
 		}
+
 		properties, found := schema[propertiesKey].(mapStringInterfaceSlice)
 		if !found {
 			return schemaInfo
 		}
+
 		for key, value := range properties {
 			propSchema, ok := value.(mapStringInterfaceSlice)
 			if !ok {
 				continue
 			}
-			schemaInfo.Properties[key] = resolveSchema(propSchema, definitions)
+			schemaInfo.Properties[key] = resolveSchemaWithSeen(propSchema, definitions, seen)
 		}
 		return schemaInfo
+
 	default:
 		return &models.SchemaInfo{Type: schemaType}
 	}
 }
+
+// ... existing code ...

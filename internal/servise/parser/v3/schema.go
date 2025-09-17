@@ -1,8 +1,9 @@
 package v3
 
 import (
-	"github.com/https-whoyan/swagger_exporter/internal/models"
 	"strings"
+
+	"github.com/https-whoyan/swagger_exporter/internal/models"
 )
 
 const (
@@ -19,15 +20,35 @@ const (
 
 type mapStringInterfaceSlice = map[string]interface{}
 
+// Используем локальное множество посещённых $ref, чтобы избежать бесконечной рекурсии.
 func resolveSchema(schema mapStringInterfaceSlice, components mapStringInterfaceSlice) *models.SchemaInfo {
+	// Используем локальное множество посещённых $ref, чтобы избежать бесконечной рекурсии.
+	return resolveSchemaWithSeen(schema, components, make(map[string]bool))
+}
+
+func resolveSchemaWithSeen(schema mapStringInterfaceSlice, components mapStringInterfaceSlice, seen map[string]bool) *models.SchemaInfo {
+	// Обработка $ref
 	if ref, ok := schema[refKeyV3].(string); ok {
 		refName := strings.TrimPrefix(ref, componentsSchemasKeyV3)
-		if definition, found := components[refName].(mapStringInterfaceSlice); found {
-			return resolveSchema(definition, components)
+
+		// Если уже раскрывали этот ref в текущем стеке — вернуть ссылку без дальнейшего раскрытия.
+		if seen[refName] {
+			return &models.SchemaInfo{Ref: refName}
 		}
-		return &models.SchemaInfo{Ref: refName}
+
+		definition, found := components[refName].(mapStringInterfaceSlice)
+		if !found {
+			// Нет определения — вернуть как ссылку.
+			return &models.SchemaInfo{Ref: refName}
+		}
+
+		seen[refName] = true
+		defer delete(seen, refName)
+
+		return resolveSchemaWithSeen(definition, components, seen)
 	}
 
+	// Тип схемы
 	schemaType, _ := schema[typeKeyV3].(string)
 
 	switch schemaType {
@@ -36,11 +57,20 @@ func resolveSchema(schema mapStringInterfaceSlice, components mapStringInterface
 		if items, found := schema[itemsKeyV3]; found {
 			switch typedItems := items.(type) {
 			case mapStringInterfaceSlice:
-				schemaInfo.Items = resolveSchema(typedItems, components)
+				schemaInfo.Items = resolveSchemaWithSeen(typedItems, components, seen)
 			case string:
+				// Случай строкового $ref в items
 				refName := strings.TrimPrefix(typedItems, componentsSchemasKeyV3)
-				if resolved, ok := components[refName].(mapStringInterfaceSlice); ok {
-					schemaInfo.Items = resolveSchema(resolved, components)
+				if defn, ok := components[refName].(mapStringInterfaceSlice); ok {
+					if seen[refName] {
+						schemaInfo.Items = &models.SchemaInfo{Ref: refName}
+					} else {
+						seen[refName] = true
+						defer delete(seen, refName)
+						schemaInfo.Items = resolveSchemaWithSeen(defn, components, seen)
+					}
+				} else {
+					schemaInfo.Items = &models.SchemaInfo{Ref: refName}
 				}
 			}
 		}
@@ -48,21 +78,25 @@ func resolveSchema(schema mapStringInterfaceSlice, components mapStringInterface
 
 	case objectTypeKeyV3:
 		schemaInfo := &models.SchemaInfo{Type: objectTypeKeyV3, Properties: make(map[string]*models.SchemaInfo)}
+
+		// additionalProperties — карта (map) или может быть булевым (true/false). Обрабатываем карту.
 		if addProps, found := schema[additionalPropsKeyV3].(mapStringInterfaceSlice); found {
 			schemaInfo.Type = mapTypeKeyV3
-			schemaInfo.Items = resolveSchema(addProps, components)
+			schemaInfo.Items = resolveSchemaWithSeen(addProps, components, seen)
 			return schemaInfo
 		}
+
 		properties, found := schema[propertiesKeyV3].(mapStringInterfaceSlice)
 		if !found {
 			return schemaInfo
 		}
+
 		for key, value := range properties {
 			propSchema, ok := value.(mapStringInterfaceSlice)
 			if !ok {
 				continue
 			}
-			schemaInfo.Properties[key] = resolveSchema(propSchema, components)
+			schemaInfo.Properties[key] = resolveSchemaWithSeen(propSchema, components, seen)
 		}
 		return schemaInfo
 
